@@ -1,0 +1,25 @@
+ebay scarping module:
+	config
+	csv_utils
+	date_utils
+	requestor
+	scraper
+	ebay_scraper
+
+
+ebay data processing module:
+	csv_utils	
+	dir_utils
+	date_utils
+	data_aggregator
+	data_analyzer
+	data_processor
+
+
+notifier module:
+	csv_utils
+	date_utils
+	requestor
+	scraper
+	emailer
+	notify

@@ -1,0 +1,237 @@
+7/13/2020
+-Started looking up basic web scraping tutorials online just to get a sense of what libraries can be used, how, and why?
+-Decided to use combination of BeautifulSoup and Requests (popular + beginner friendly)
+-skimmed through the documentation and specifically studied functions used for financial web scraping
+-started writing basic request function
+-objective: ask user for URL and access the page on the web but if it doesn't exist or search timeout, send error/notification 
+-
+
+
+7/14/2020
+-for now focus on just eBay
+-first ask user for item to search
+-ask for other parameters (no input validation yet loop yet)
+-buying format, price thresholds, sold/current listings?, sorting
+-build the URL based on given inputs
+-include item categorization to narrow results (otherwise to many "throw-aways" that clog results)
+-no category input validation right now (too tedious since too many categories to account for, long if-else conditional)
+-format user input asking
+-pull categories data (ID, Title) from csv
+
+
+7/15/2020
+-Decided to try to learn a bit about HTML in general
+-specifically tags and attributes, which is most pertinent to web scraping
+-started writing basic scraper function to pair with my request function
+-objective: given the URL of an eBay search (skip asking user), scrape a few properties of each listing on a page (price, link, title, etc.) 
+
+
+7/16/2020
+-cleaning things up a bit
+-separating things a bit (modularity)
+-handling a few edge-cases (i.e. dodging "results with fewer words" if too few results from original search)
+-scrape from ALL results, not just first page (if applicable)
+-had to scrape the number of results before scraping the results themselves
+
+
+7/17/2020
+-bit of data science library studying/reviewing (Data aggregation and plotting)
+-learn a bit about pandas, specifically dataframes
+-plan: scraped data -> csv -> dataframe (read csv) -> data processing/plotting
+-traversing directories using "os" library
+-accessing a directory in a separate directory from the current working directory
+-listing the contents of the accessed directory and asking the user to choose a file (.csv)
+-no input validation yet (prone to errors if file is unlisted or uesr inputs something not as told/expected) 
+
+
+7/18/2020
+-data processing
+-compute min/max/mean/mode for past listings (by month)
+-so this was tricky since eBay dates are formatted a way that complicates processing
+-BIG ISSUE: when scraping the date of a listing, wanted to reformat to mm, dd for easier processing but kept scraping NONE for everything (not just date but price, title, etc.) when adding the line of code to map (using dictionary)
+-works fine w/o the line(s) of code that translates (simply using a sliced string of scraped text as the map's key)
+-finally just resigned to store date in mmm, dd (mmm is 3 letter month abreviation) 
+-then either process the date as-is or translate mmm (3-letter) to mm (number) when processing/reading csv to dataframe
+-plot it
+
+
+7/19/2020
+-bit of a shorter day
+-cleaning things up a bit again 
+-debugging few of the minor bugs
+
+
+7/21/2020
+-better/more organized os/dir pathing (csv of scapred listings separated by date of scraping and whether past or current listings)
+-successfully compute monthly logistics (just mean, max, min) for past listings
+-read from csv of listings data into a pandas dataframe 
+-then computed the three months span using current date and a bit of math (then translate to 3-letter abbreviation to follow format of the csv)
+-create a small dictionary (hashmap) to store the monthly logistics (min, max, mean)
+-create independent dataframes to keep the scraped data pertaining to each logistic (i.e. listing title, link, price, etc. of the minimum)
+-loop over the list of month, aggregating to the cumulative dictionary (hashmap) and building (appending to) each monthly logistic dataframe
+-used dataframe b/c easy to process (filter by date to filter only listings belonging to month of interest, then use dataframe methods to compute logistics)
+-current listings untested, since no "date purchased" parameter due to not being sold yet (must employ different tactic: logistics for ALL scraped listings)
+
+
+7/23/2020
+-attempted to process daily logistics for past listings
+-while computing monthly logistics, compute logistics for each day in the month in a similar fashion
+-instead of storing in a csv (same or different), just print the dictionary of logistics and the independent dataframes of scrapings 
+-plot the (daily) date of listing (x-axis) vs min/max/mean price (y-axis) for each month (up to 4 plots)
+-some bugs with both the data processing and plotting
+
+
+7/24/2020
+-more understandable request prompt and more robust data scraping
+-notably for shipping and price which had issues when computing the total due to unwanted characters like '$' and ',' and ranges or phrases like 'not specified' or '$100.00 to $200.00'
+-more usage of string methods and regex rather than 'brute-force' solutions
+-removed the request to decide between how to sort listings ("price+shipping lowest", "most recent", etc.)
+-unnecessar since listings themselves are what matters, not order (also more data shown when using "most recent")
+-default to: "most recent"
+
+
+
+7/25/2020
+-continue working on (debugging) data processing for PAST listings
+-only show user non-logistics csv's when showing choices of csv's to process
+-turned the data processing portion into own script (data analyzer) separate from the "main"/application script (data processor)
+-completed data processing for CURRENT listings
+-much simpler since no need to manage dates (months, days, etc.) since everything is current
+-simply read the csv data to a dataframe, compute the logistics off this dataframe, aggregate the logistics data, then report/save them (no plotting)
+
+
+7/26/2020
+-continue debugging/fine-tuning
+-different names for active, past, BIN, auction logistic csv files
+-start on Notifier
+-determine current date/time
+-reformat to eBay (current) listing format (mmm-dd HH:MM)
+-assume search query and associating parameters stored in a csv (each row is a separate search query)
+-format:	search query, category (ID), buying format, price threshold
+-for now assumes category ID is used rather than category name (skip encoding for now since hardcoded)
+-read each row from the csv as a list -> end up with list of rows (lists)
+-2 APPROACHES:
+	1) go through each query and search+scrape (compute -> search -> compute -> search)
+		delays between each search may throw off the security, albiet miniscule delays
+	2) build every queries' URL first and store them in a list of URLs, then search+scrape each one (pre-compute -> search)
+		quicker searching (now delays from computing URL in-between searches)
+
+
+7/31/2020
+-implement the actual scraper for the notifier
+-very messy right now 
+-web of "if-else" statements to determine wheteher or not listing is within T time of current date-time
+-lots of edge-cases like if midnight, first day of month, beginning of new hour, etc. (have to check previous day or month or hour or combination of the three)
+-minimally tested for now
+
+
+
+8/2/2020
+-debugging the scraping part of the notifier
+-modularized it a bit (broke into smaller, callable functions)
+-functions for time windows/periods < 60 minutes (1 hr)
+-haven't implemented the time check for 1 hour and above
+-works, but when scraping items, they seem to scrape out of order after the first few
+	i.e. scraping iPhone 11 listings in "Newly Listed" order works perfectly for first few, then jumps to active old listings (listed months ago) before continuing the recent ones
+-this throws off my scraper which stops when reaching a listing too old (out of time period/window), so I may miss out on listings that are within the window
+-problem averted for really small windows (like a few minutes)
+-will test another day
+
+
+8/3/2020
+-re-tested the scraping part and now it works (doesn't do the out order listing jump anymore), weird....maybe on website's end?
+-implementing the emailer
+-using smtp
+-TSL encrypting the connection
+-struggling to use a localhost for debugging
+-untested 
+
+
+8/4/2020
+-fixed the issues with using a localhost
+-was calling the connection method incorrectly (only used "localhost" parameter but forgot to pass in the port, 1025)
+-also forgot to even initialize/run the local mailing server (have to have a mail server running to establish a connection)
+-couldn't tell if it was running or not b/c no feedback (run command, blank line)
+-guess I should've expected it was working since I wasn't prompted for further commands
+-turned this command into a simple executable bash script
+-added the bash script to a /bin dir I made which is part of my list of PATH (loaded/updated when logging on)
+
+
+8/6/2020
+-continued on the notifier
+-started on the scraping part and managed to generate a csv of scraped data/listings
+-now on to the emailer...
+-started working on actually emailing with actual addresses (real accounts)
+-looked up and studied a bit on adding attachments, specifically csv
+
+
+8/8/2020 
+-continued working on the emailer
+-keep getting conncetion and authentication errors when trying to log in to my aol or gmail accounts
+-realized gmail was blacklisting my app
+-had to turn third-party app filter off on gmail (temporarily)
+-managed to successfully send the email with the correct csv!
+-still a bit hazy on the workings for attaching the csv
+-aside from some polishing and getting past the aforementioned errors with logging in, next up is making the notifier run periodically (and how)
+
+
+
+
+
+Future work...
+-save plots instead of just showing them
+-combine days over a month plots into a single display/file (up to 4 subplots)
+-work on weekly logistics (past listings)?
+-chron vs. celery vs. timeloop vs. thread 
+
+
+
+
+
+
+7/19/2020
+-price notification
+-look at newly listed listings
+-have a cache of a few most recent listing from a previous search/check (avoid redundancy)
+-if current most recent is among the cached listings, then do nothing
+-otherwise scrape price first
+-if price crosses threshold, scrape link and price and then email it (or just email entire listing HTML)
+-otherwise do nothing
+
+alternatively:
+-look at Price+shipping Lowest listings every x seconds/minutes (read robotics.txt or look online for heuristic on frequency)
+-check first n listings
+-if crosses threshold, scrape link and price and then email it (or entire HTML)
+-otherwise do nothing
+
+
+7/20/2020
+-auction notification
+-look at auctions ending soonest
+-check if time left < T hour(s)
+-if not, ignore
+-have a cache of already checked listings to avoid redundancy
+-check price of each remaining listing
+-if crosses threshold, scrape link and price and then email it (or just email entire listing HTML)
+-otherwise do nothing
+
+
+7/21/2020
+-improve notifier?  (ebay pretty lenient)
+-try other websites?
+
+
+consider:
+check sold listings within week or month -> collect mean, mode, min, max
+implement the notifier
+	implement proxying (tor)
+	check robotics.txt
+use selenium to bypass javascript requirements?  (or just use TOR)
+other websites 
+	Amazon, Walmart, Target
+	Best Buy, Gamestop, BHPhoto, Newegg
+	GreenManGaming, Gog, WinGames, Gamersgate, Steam, Fanatical
+	Tcgplayer, Coolstuffinc, Alterrealitygames, Coretcg
+	Craigslist, LetItGo, OfferUp
+try other databases (SQL or Pandas dataframe)
+
